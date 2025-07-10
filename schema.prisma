@@ -35,7 +35,7 @@ model User {
 
     createdNotes   Notes[]       @relation("UserCreatedNotes")
     reviews        Review[]
-    transactions   Transaction[]
+    transactions   Transaction[] //nti kalo mau getallboughtnotes tinggal query cari status paid
 }
 
 model UserProfile {
