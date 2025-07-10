@@ -8,22 +8,104 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        String  @id @default(cuid())
-    title     String
-    content   String?
-    published Boolean @default(false)
-    author    User?   @relation(fields: [authorId], references: [id])
-    authorId  String?
+enum Role {
+    ADMIN  @map("Admin")
+    // @map untuk maping datanya ke database dengan value Admin
+    SELLER @map("Seller")
+    BUYER  @map("Buyer")
+}
+
+enum PaymentStatus {
+    PENDING   @map("Pending")
+    COMPLETED @map("Completed")
+    FAILED    @map("Failed")
 }
 
 model User {
-    id        String   @id @default(cuid())
-    name      String?
-    email     String?  @unique
-    createdAt DateTime @default(now()) @map(name: "created_at")
-    updatedAt DateTime @updatedAt @map(name: "updated_at")
-    posts     Post[]
+    userId   Int    @id @default(autoincrement())
+    //limit 255 char
+    email    String @unique @db.VarChar(255)
+    username String @unique @db.VarChar(100)
+    //limit 100 char
+    password String @db.VarChar(100)
+    role     Role   @default(BUYER)
 
-    @@map(name: "users")
+    profile       UserProfile?
+    sellerProfile SellerProfile?
+
+    createdNotes   Notes[]       @relation("UserCreatedNotes")
+    reviews        Review[]
+    transactions   Transaction[]
+}
+
+model UserProfile {
+    userProfileId Int @id @default(autoincrement())
+    // userId ini dari table User
+    userId        Int @unique // FK
+
+    fullname    String
+    gender      String
+    imageUrl    String
+    phoneNumber String
+    biodata     String
+    campus      String?
+    major       String?
+
+    user        User    @relation(fields: [userId], references: [userId])
+}
+
+model SellerProfile {
+    sellerProfileId Int @id @default(autoincrement())
+    userId          Int @unique // FK
+
+    avgPrice   Float?
+    rating     Float?
+    totalSales Int?
+
+    user User @relation(fields: [userId], references: [userId])
+}
+
+model Notes {
+    noteId           Int      @id @default(autoincrement())
+    note_title       String
+    note_description String
+    campus_origin    String
+    pdfUrl           String
+    date_created     DateTime @default(now())
+    price            Int
+
+    creatorId    Int
+    note_creator User @relation("UserCreatedNotes", fields: [creatorId], references: [userId])
+
+    reviews      Review[]
+    transactions Transaction[]
+
+    @@index([creatorId, campus_origin])
+}
+
+model Review {
+    reviewId    Int     @id @default(autoincrement())
+    noteId      Int
+    userId      Int
+    score       Float
+    review_note String?
+
+    notes Notes @relation(fields: [noteId], references: [noteId])
+    user  User  @relation(fields: [userId], references: [userId])
+
+    @@unique([noteId, userId]) // one user can only review a note once
+}
+
+model Transaction {
+    transactionId Int           @id @default(autoincrement())
+    userId        Int
+    noteId        Int
+    time_created  DateTime      @default(now())
+    paymentStatus PaymentStatus @default(PENDING)
+    time_paid     DateTime?
+
+    user User  @relation(fields: [userId], references: [userId])
+    note Notes @relation(fields: [noteId], references: [noteId])
+
+    @@index([userId, noteId])
 }
