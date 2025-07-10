@@ -80,7 +80,7 @@ model Notes {
     reviews      Review[]
     transactions Transaction[]
 
-    @@index([creatorId, campus_origin])
+    @@index([creatorId, campus_origin]) //untuk optimize query
 }
 
 model Review {
